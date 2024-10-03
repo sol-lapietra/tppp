@@ -1,0 +1,19 @@
+-- EJERCICIO 6
+duracionDelCaminoMasRapido :: AgenciaDeViajes -> Ciudad -> Ciudad -> Duracion
+duracionDelCaminoMasRapido [] _ _ = 0.0
+duracionDelCaminoMasRapido ((m,r,l):ms) n t | longitud (eliminarRepetidos t (conexiones n t ((m,r,l):ms))) == 0 = l 
+                                            | longitud (eliminarRepetidos t (conexiones n t ((m,r,l):ms))) == 1 = sumaDeTiempo (duracionDeVuelo n t  ((m,r,l):ms))
+                                            | otherwise = duracionDelCaminoMasRapido ms n t
+
+duracionDeVuelo :: Ciudad -> Ciudad -> AgenciaDeViajes -> [Duracion]
+duracionDeVuelo  _ _ [] = []
+duracionDeVuelo  n l ((c,t,m):cs) | l /= c && n == c  = [m] ++ duracionDeVuelo t l cs
+                                  | otherwise = duracionDeVuelo n l cs
+
+sumaDeTiempo :: [Duracion] -> Duracion
+sumaDeTiempo [] = 0.0
+sumaDeTiempo (x:xs) = x + sumaDeTiempo xs
+
+--sumaDeTiempo [5.0,5.0]
+-- duracionDeVuelo "BsAs" "Cordoba" [("BsAs", "Rosario", 5.0), ("Rosario", "Cordoba", 5.0),("Cordoba", "BsAs", 8.0)]
+-- duracionDelCaminoMasRapido [("BsAs", "Rosario", 5.0), ("Rosario", "Cordoba", 5.0),("Cordoba", "BsAs", 8.0)] "BsAs" "Cordoba"
