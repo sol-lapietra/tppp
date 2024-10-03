@@ -1,0 +1,101 @@
+type Ciudad = String
+type Duracion = Float 
+type Vuelo = (Ciudad, Ciudad, Duracion)
+type AgenciaDeViajes = [Vuelo]
+
+--- EJERCICIO 1
+vuelosValidos :: AgenciaDeViajes -> Bool
+vuelosValidos [] = True
+vuelosValidos ((n,m,t):xs) | pertenece (n,m,t) (xs)==False && vueloValido (n,m,t) = vuelosValidos xs 
+                           | otherwise = False
+
+vueloValido :: Vuelo -> Bool
+vueloValido (n, m, t) | n/=m && t>0 = True
+                      | otherwise = False
+
+
+pertenece :: Vuelo -> AgenciaDeViajes -> Bool
+pertenece _ [] = False
+pertenece n (m:ms) | n == m = True
+                   | otherwise = False
+-- vueloValido ("Rosario", "BsAs", 5.0)
+-- vuelosValidos [("BsAs", "Rosario", 5.0)]
+-- vuelosValidos [("BsAs", "Mendoza", 2.5), ("Cordoba", "Misiones", 0.0)]
+
+--EJERCICIO 2 
+estaLaCiudad :: Ciudad -> Vuelo -> Bool
+estaLaCiudad n (x,y,z) | n == x || n == y = True
+                       | otherwise = False
+
+destinoYPartida :: Ciudad -> Vuelo -> Ciudad
+destinoYPartida n (x,y,z) | n == x = y
+                          | n == y = x 
+
+eliminarRepetidos :: (Eq t) => t -> [t] -> [t]
+eliminarRepetidos _ [] = []
+eliminarRepetidos n (x:xs) | n == x = eliminarRepetidos n xs
+                           | otherwise = x:eliminarRepetidos n xs
+
+-- eliminarRepetidos ("Rosario", "Mendoza", 2.5) [("BsAs", "Rosario", 5.0), ("Rosario", "Mendoza", 2.5)] 
+ciudadesConectadas :: AgenciaDeViajes -> Ciudad -> [Ciudad]
+ciudadesConectadas [] _ = []
+ciudadesConectadas (x:xs) n | estaLaCiudad n x == True = [destinoYPartida n x] ++ ciudadesConectadas (eliminarRepetidos x xs) n
+                            | otherwise = ciudadesConectadas xs n 
+
+-- ciudadesConectadas [("BsAs", "Rosario", 5.0), ("Rosario", "Mendoza", 2.5), ("BsAs", "Rosario", 5.0)] "Rosario"
+
+-- EJERCICIO 3
+modernizarFlota :: AgenciaDeViajes -> AgenciaDeViajes
+modernizarFlota [] = []
+modernizarFlota (x:xs) = actualizarDuracionVuelo x : modernizarFlota xs
+
+actualizarDuracionVuelo :: Vuelo -> Vuelo
+actualizarDuracionVuelo (a,b,c)  = (a,b, c*0.9)
+
+-- modernizarFlota [("BsAs", "Rosario", 10.0)]
+
+-- EJERCICIO 4
+ciudadMasConectada :: AgenciaDeViajes -> Ciudad
+ciudadMasConectada viajes = masRepetida (auxiliar viajes)
+
+-- ciudadMasConectada [("BsAs", "Rosario", 10.0), ("Rosario", "Cordoba", 7.0)]
+
+laMasRepetidaInt :: Ciudad -> [Ciudad] -> Int
+laMasRepetidaInt n [] = 0 
+laMasRepetidaInt n (m:ms) | n==m = 1 + laMasRepetidaInt n ms
+                          | otherwise = laMasRepetidaInt n ms
+
+-- laMasRepetidaInt "Rosario"  [("BsAs", "Rosario", 10.0), ("Rosario", "Cordoba", 7.0)]
+auxiliar :: AgenciaDeViajes -> [Ciudad]
+auxiliar [] = []
+auxiliar ((a,b,c):xs) = a:b:auxiliar xs
+
+-- auxiliar [("BsAs", "Rosario", 10.0), ("Rosario", "Cordoba", 7.0)]
+
+masRepetida :: [Ciudad] -> Ciudad
+masRepetida (c:t:cs) | c /= t && (laMasRepetidaInt c (c:t:cs)) > (laMasRepetidaInt t (c:t:cs)) = c
+                     | c == t && (laMasRepetidaInt c (c:t:cs)) >= (laMasRepetidaInt t (c:t:cs)) = c
+                     | otherwise = masRepetida (eliminarRepetidos c (c:t:cs))
+
+-- masRepetida ["BsAs","Rosario","Rosario","Cordoba"]
+
+-- EJERCICIO 5
+sePuedeLlegar :: AgenciaDeViajes -> Ciudad -> Ciudad -> Bool
+sePuedeLlegar [] _ _ = False
+sePuedeLlegar (x:xs) n m | longitud (eliminarRepetidos m (conexiones n m (x:xs))) == 0 = True
+                         | longitud (eliminarRepetidos m (conexiones n m (x:xs))) == 1 = True
+                         | otherwise = False
+
+-- sePuedeLlegar [("BsAs", "Rosario", 5.0), ("Rosario", "Cordoba", 5.0),("Cordoba", "BsAs", 8.0)] "BsAs" "Cordoba"
+-- sePuedeLlegar [("BsAs", "Cordoba", 5.0)] "BsAs" "Cordoba"
+conexiones :: Ciudad -> Ciudad -> AgenciaDeViajes -> [Ciudad]
+conexiones  _ _ [] = []
+conexiones  n l ((c,t,m):cs) | l /= c && n == c  = [t] ++ conexiones t l cs
+                             | otherwise = conexiones n l cs
+
+longitud ::(Eq t) => [t] -> Integer
+longitud [] = 0
+longitud (x:xs) = 1 + longitud xs
+
+-- conexiones "BsAs" "Cordoba" [("BsAs", "Rosario", 5.0), ("Rosario", "Cordoba", 5.0),("Cordoba", "BsAs", 8.0)]
+-- conexiones "BsAs" "Cordoba" [("BsAs", "Cordoba", 5.0)]   
