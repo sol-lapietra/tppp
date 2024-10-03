@@ -1,58 +1,50 @@
 type Ciudad = String
-type Duracion = Float 
+type Duracion = Float
 type Vuelo = (Ciudad, Ciudad, Duracion)
 type AgenciaDeViajes = [Vuelo]
 
---- EJERCICIO 1
+-- EJERCICIO 1
 vuelosValidos :: AgenciaDeViajes -> Bool
 vuelosValidos [] = True
-vuelosValidos ((n,m,t):xs) | pertenece (n,m,t) (xs)==False && vueloValido (n,m,t) = vuelosValidos xs 
-                           | otherwise = False
+vuelosValidos (v:vs)
+  | not (vueloValido v) = False
+  | pertenece v vs      = False
+  | otherwise           = vuelosValidos vs
 
 vueloValido :: Vuelo -> Bool
-vueloValido (n, m, t) | n/=m && t>0 = True
-                      | otherwise = False
-
+vueloValido (c1, c2, t) = (c1 /= c2) && (t > 0.00)
 
 pertenece :: Vuelo -> AgenciaDeViajes -> Bool
 pertenece _ [] = False
-pertenece n (m:ms) | n == m = True
-                   | otherwise = False
--- vueloValido ("Rosario", "BsAs", 5.0)
--- vuelosValidos [("BsAs", "Rosario", 5.0)]
--- vuelosValidos [("BsAs", "Mendoza", 2.5), ("Cordoba", "Misiones", 0.0)]
+pertenece (v11, v12, _) ((v21, v22, _):xs) = (v11 == v21 && v12 == v22) || pertenece (v11, v12, _) xs
 
 --EJERCICIO 2 
-estaLaCiudad :: Ciudad -> Vuelo -> Bool
-estaLaCiudad n (x,y,z) | n == x || n == y = True
-                       | otherwise = False
-
-destinoYPartida :: Ciudad -> Vuelo -> Ciudad
-destinoYPartida n (x,y,z) | n == x = y
-                          | n == y = x 
-
-eliminarRepetidos :: (Eq t) => t -> [t] -> [t]
-eliminarRepetidos _ [] = []
-eliminarRepetidos n (x:xs) | n == x = eliminarRepetidos n xs
-                           | otherwise = x:eliminarRepetidos n xs
-
--- eliminarRepetidos ("Rosario", "Mendoza", 2.5) [("BsAs", "Rosario", 5.0), ("Rosario", "Mendoza", 2.5)] 
 ciudadesConectadas :: AgenciaDeViajes -> Ciudad -> [Ciudad]
-ciudadesConectadas [] _ = []
-ciudadesConectadas (x:xs) n | estaLaCiudad n x == True = [destinoYPartida n x] ++ ciudadesConectadas (eliminarRepetidos x xs) n
-                            | otherwise = ciudadesConectadas xs n 
+ciudadesConectadas agencia ciudad = eliminarRepetidos (buscarCiudadesDesdeYHacia agencia ciudad)
 
--- ciudadesConectadas [("BsAs", "Rosario", 5.0), ("Rosario", "Mendoza", 2.5), ("BsAs", "Rosario", 5.0)] "Rosario"
+-- Función para buscar ciudades conectadas desde y hacia la ciudad
+buscarCiudadesDesdeYHacia :: AgenciaDeViajes -> Ciudad -> [Ciudad]
+buscarCiudadesDesdeYHacia [] _ = []
+buscarCiudadesDesdeYHacia ((v11, v12, _):xs) ciudad
+  | v11 == ciudad = v12 : buscarCiudadesDesdeYHacia xs ciudad  -- Ciudad a ciudad de destino
+  | v12 == ciudad = v11 : buscarCiudadesDesdeYHacia xs ciudad  -- Ciudad de origen a ciudad
+  | otherwise = buscarCiudadesDesdeYHacia xs ciudad
+
+-- funcion que elimina los elementos repetidos de res
+eliminarRepetidos :: [Ciudad] -> [Ciudad] 
+eliminarRepetidos [] = []
+eliminarRepetidos (x:xs) = x : eliminarRepetidos (quitar x xs)
+
+quitar :: Ciudad -> [Ciudad] -> [Ciudad]
+quitar _ [] = []
+quitar ciudad (x:xs)
+  | ciudad == x = quitar ciudad xs
+  | otherwise = x : quitar ciudad xs
 
 -- EJERCICIO 3
 modernizarFlota :: AgenciaDeViajes -> AgenciaDeViajes
 modernizarFlota [] = []
-modernizarFlota (x:xs) = actualizarDuracionVuelo x : modernizarFlota xs
-
-actualizarDuracionVuelo :: Vuelo -> Vuelo
-actualizarDuracionVuelo (a,b,c)  = (a,b, c*0.9)
-
--- modernizarFlota [("BsAs", "Rosario", 10.0)]
+modernizarFlota ((origen, destino, duracion):xs) = (origen, destino, duracion * 0.9) : modernizarFlota xs
 
 -- EJERCICIO 4
 ciudadMasConectada :: AgenciaDeViajes -> Ciudad
@@ -99,3 +91,15 @@ longitud (x:xs) = 1 + longitud xs
 
 -- conexiones "BsAs" "Cordoba" [("BsAs", "Rosario", 5.0), ("Rosario", "Cordoba", 5.0),("Cordoba", "BsAs", 8.0)]
 -- conexiones "BsAs" "Cordoba" [("BsAs", "Cordoba", 5.0)]   
+
+
+-- EJERCICIO 7
+puedoVolverAOrigen :: AgenciaDeViajes -> Ciudad -> Bool
+puedoVolverAOrigen agencia origen = buscarRuta agencia origen origen
+
+buscarRuta :: AgenciaDeViajes -> Ciudad -> Ciudad -> Bool
+buscarRuta [] _ _ = False
+buscarRuta ((v11, v12, _):xs) origen destino | v11 == destino && v12 == origen = True
+                                             | v11 == destino = buscarRuta xs origen v12
+                                             | v12 == origen = buscarRuta xs origen v11
+                                             | otherwise = buscarRuta xs origen destino
